@@ -9,7 +9,7 @@ wss.on("connection", (ws) => {
 	let count = 1;
 	setInterval(() => {
 		const geoInfo = {
-			vendorID: count > 1 ? faker.number.int({ min: 1, max: 5 }).toString() : "1",
+			vendorID: count > 1 ? faker.number.int({ min: 1, max: 2 }).toString() : "1",
 			lat: 1.3521 + faker.number.float() / 100,
 			lng: 103.8198 + faker.number.float() / 100
 		};

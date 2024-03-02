@@ -6,7 +6,7 @@
 	"scripts": {
 		"preinstall": "npx only-allow pnpm",
 		"clear": "rm -rf .svelte-kit && npx npkill",
-		"dev": "vite dev --mode=development",
+		"dev": "vite dev --mode=staging",
 		"build": "pnpm run fmt && rm -rf build && vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -15,6 +15,7 @@
 		"test:e2e": "playwright test --ui",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
 		"fmt": "prettier --plugin-search-dir . --write .",
+		"ws": "node e2e-tests/mock/ws-server/server.js",
 		"compose": "docker compose build --no-cache && docker compose up --detach --force-recreate",
 		"compose:prune": "docker compose down && docker system prune && docker volume prune"
 	},
