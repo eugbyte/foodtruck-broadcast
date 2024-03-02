@@ -1,0 +1,8 @@
+.git
+.vscode
+.gitignore
+README.md
+docker-compose.yml
+Dockerfile
+**/*.Makefile
+Makefile

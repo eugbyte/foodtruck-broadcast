@@ -1,0 +1,16 @@
+go 1.20
+
+use (
+    ./pkg/notification/web_push
+    ./pkg/db
+    ./pkg/queue/sqs
+    ./pkg/queue/kafka_lib
+    ./pkg/websocket
+    ./pkg/logger
+    ./pkg/config
+    ./pkg/model
+    ./service/stream_aggregator
+    ./service/web_push
+    ./service/inventory
+    ./service/geo_adapter
+)

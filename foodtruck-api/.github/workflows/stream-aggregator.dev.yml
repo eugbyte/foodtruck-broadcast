@@ -1,0 +1,38 @@
+name: stream-aggregator-dev
+concurrency:
+  group: stream-aggregator-dev
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+    paths:
+      - ".github/**"
+      - "pkg/**"
+      - "service/stream_aggregator/**"
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v3
+      - name: Print dir
+        run: ls
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+      - name: Download Go modules
+        run: |
+          make workspace=service/stream_aggregator download
+          sudo make lint-install
+      - name: Run unit tests
+        run: |
+          make workspace=service/stream_aggregator test
+      - name: Run lint
+        run: |
+          make workspace=service/stream_aggregator lint

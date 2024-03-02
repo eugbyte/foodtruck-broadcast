@@ -1,0 +1,16 @@
+{
+	"short_name": "Foodtruck PWA",
+	"name": "Foodtruck PWA",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"theme_color": "#ffffff",
+	"background_color": "#ffffff",
+	"icons": [
+		{
+			"src": "./paripus.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

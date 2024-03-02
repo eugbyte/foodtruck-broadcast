@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+
+  localstack_pro:
+    container_name: "localstack_pro"
+    image: localstack/localstack-pro:latest
+    environment: 
+        - LOCALSTACK_API_KEY=1Mr9YxcNhJ
+        - DEFAULT_REGION=ap-southeast-1
+        - DEBUG=1
+        - PERSISTENCE=1
+        - SERVICES=dynamodb
+        # - LAMBDA_DOCKER_NETWORK=backend
+    # https://docs.localstack.cloud/getting-started/installation/#starting-localstack-with-docker-compose
+    ports:
+        - "53:53"                   # DNS config  (required for Pro)
+        - "53:53/udp"               # DNS config  (required for Pro)
+        - "443:443"                 # LocalStack HTTPS Gateway (required for Pro)
+        - "4510-4559:4510-4559"      # external services port range
+        - "4566:4566"               # LocalStack Gateway
+    volumes:
+        - local_volume:/tmp/localstack/data
+        # docker.sock is required as localstack container need to launch new containers from within its own container (https://stackoverflow.com/a/35110344/6514532)
+        - /var/run/docker.sock:/var/run/docker.sock 
+
+  postgres:
+    container_name: "postgresql_e2e"
+    image: postgres:15.4
+    environment: 
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_DB=inventory_staging
+    ports:
+        - "5200:5432"      
+    volumes:
+      - local_volume:/tmp/foodtruck/data/pg
+
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    container_name: 'zookeeper'
+    ports:
+      - '2181:2181'
+    volumes:
+      - local_volume:/tmp/foodtruck/data/zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: 'bitnami/kafka:latest'
+    container_name: 'kafka'
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    depends_on:
+      - zookeeper
+    volumes:
+      - local_volume:/tmp/foodtruck/data/kafka
+    environment:
+      # https://www.confluent.io/blog/kafka-listeners-explained/
+      # https://www.baeldung.com/kafka-docker-connection
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true 
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+
+      - KAFKA_CFG_LISTENERS=INTERNAL://:29092,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
+
+  foodtruck_geo_adapter:
+    container_name: foodtruck_geo_adapter
+    image: geo_adapter:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SRC_PATH: "service/geo_adapter/cmd/websocket/main.go"
+    depends_on:
+      - kafka
+    environment:
+      AWS_ACCESS_KEY_ID: "123" 
+      AWS_SECRET_ACCESS_KEY: "123"
+      STAGE: "int"
+    restart: "no"
+    ports:
+      - '6000:6000'
+    volumes:
+      - local_volume:/tmp/foodtruck/data/geo_adapter
+
+  foodtruck_stream_aggregator:
+    container_name: foodtruck_stream_aggregator
+    image: foodtruck_stream_aggregator:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SRC_PATH: "service/stream_aggregator/cmd/websocket/main.go"
+    depends_on:
+      - kafka
+      - foodtruck_geo_adapter # need to wait for geo_adapter to create the kafka topic
+    environment:
+      AWS_ACCESS_KEY_ID: "123" 
+      AWS_SECRET_ACCESS_KEY: "123"
+      STAGE: "int"
+    restart: always
+    ports:
+      - '8080:8080'
+    volumes:
+      - local_volume:/tmp/foodtruck/data/foodtruck_stream_aggregator
+
+  foodtruck_inventory:
+    container_name: foodtruck_inventory
+    image: foodtruck_inventory:latest
+    depends_on:
+      - postgres    
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SRC_PATH: "service/inventory/cmd/vendor/main.go"
+    extra_hosts:
+      # needed for host.docker.internal to work in linux (https://stackoverflow.com/a/67158212)
+      - "host.docker.internal:host-gateway"              
+    environment:
+      AWS_ACCESS_KEY_ID: "123" 
+      AWS_SECRET_ACCESS_KEY: "123"
+    restart: always
+    ports:
+      - '7000:7000'
+    volumes:
+      - local_volume:/tmp/foodtruck/data/foodtruck_inventory
+    
+volumes:
+    local_volume:
+
+# By default Compose sets up a single network for your app, and each container for a service joins the default network.

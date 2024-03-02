@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  foodtruck_ui:
+    container_name: foodtruck_ui
+    image: foodtruck/ui:v0.0.1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3173:80" # port 8080 != port 80
+
+  mock_ws_server:
+    container_name: mock_ws_server
+    image: foodtruck/api_mock_ws_server
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-ws-server
+    restart: "no"
+    ports:
+      - "3080:3080"
+# By default Compose sets up a single network for your app, and each container for a service joins the default network.

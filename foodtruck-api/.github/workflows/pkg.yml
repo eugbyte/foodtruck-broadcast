@@ -1,0 +1,49 @@
+name: shared-pkg
+concurrency:
+  group: shared-pkg
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+    paths:
+      - ".github/**"
+      - "pkg/**"
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v3
+      - name: Print dir
+        run: ls
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+      - name: Download Go modules
+        run: |
+          make workspace=pkg/queue/kafka_lib download
+          make workspace=pkg/queue/sqs download
+          make workspace=pkg/logger download
+          make workspace=pkg/websocket download
+          make workspace=pkg/db download
+          sudo make lint-install
+      - name: Run unit tests
+        run: |
+          make workspace=pkg/queue/kafka_lib test
+          make workspace=pkg/queue/sqs test
+          make workspace=pkg/logger test
+          make workspace=pkg/websocket test
+          make workspace=pkg/db test
+      - name: Run lint
+        run: |
+            make workspace=pkg/queue/kafka_lib lint
+            make workspace=pkg/queue/sqs lint
+            make workspace=pkg/logger lint
+            make workspace=pkg/websocket lint
+            make workspace=pkg/db lint

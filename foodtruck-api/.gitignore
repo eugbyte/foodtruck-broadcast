@@ -1,0 +1,12 @@
+# service/web_push
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+service/web_push/bin
+service/web_push/output.json
+
+go.work.sum
