@@ -6,7 +6,7 @@ services:
     container_name: "localstack_pro"
     image: localstack/localstack-pro:latest
     environment: 
-        - LOCALSTACK_API_KEY=1Mr9YxcNhJ
+        - LOCALSTACK_API_KEY=abcde
         - DEFAULT_REGION=ap-southeast-1
         - DEBUG=1
         - PERSISTENCE=1
